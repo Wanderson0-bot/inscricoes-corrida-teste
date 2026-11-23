@@ -1,0 +1,38 @@
+.backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(17 28 22 / 48%);
+}
+
+.dialog {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 20%);
+}
+
+.eyebrow {
+  margin: 0 0 9px;
+  color: var(--danger-ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.dialog h2 { margin: 0 0 12px; font-size: 24px; }
+.dialog p:not(.eyebrow) { color: var(--muted); line-height: 1.55; }
+.actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.actions form { margin: 0; }
+
+@media (max-width: 480px) {
+  .dialog { padding: 22px; }
+  .actions { flex-direction: column-reverse; }
+  .actions form, .actions button { width: 100%; }
+}

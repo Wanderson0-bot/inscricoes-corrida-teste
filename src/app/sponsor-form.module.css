@@ -1,0 +1,44 @@
+.form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.messageField,
+.privacyNote,
+.submit {
+  grid-column: 1 / -1;
+}
+
+.messageField textarea {
+  min-height: 132px;
+}
+
+.privacyNote {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.submit {
+  width: 100%;
+  min-height: 50px;
+}
+
+@media (max-width: 640px) {
+  .form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .messageField,
+  .privacyNote,
+  .submit {
+    grid-column: auto;
+  }
+}
