@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { SponsorForm } from "@/app/sponsor-form";
 import { RaceCard } from "@/app/race-card";
+import { raceDistances } from "@/lib/race-distances";
 import styles from "./home.module.css";
 
 export const instant = false;
@@ -10,7 +11,7 @@ export const instant = false;
 export default async function Home() {
   await connection();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data: races, error } = await supabase
     .from("races")
     .select("id, name, slug, location, starts_at, cover_image_path, race_categories(name, price_cents)")
@@ -66,6 +67,29 @@ export default async function Home() {
             <span className="muted">Volte em breve para encontrar seu próximo desafio.</span>
           </div>
         )}
+      </section>
+
+      <section className={styles.distanceSection} aria-labelledby="distance-heading">
+        <div className="container">
+          <div className={styles.organizerHeading}>
+            <h2 id="distance-heading">Encontre sua distância</h2>
+            <p>Do seu primeiro quilômetro aos grandes desafios, escolha o percurso ideal para o seu ritmo.</p>
+          </div>
+          <ul className={styles.distanceGrid}>
+            {raceDistances.map(({ key, distance, level, title, description }) => (
+              <li key={key}>
+                <Link className={styles.distanceCard} href={`/corridas?distancia=${key}`}>
+                  <div className={styles.distanceCardHeader}>
+                    <span className="race-category race-category-primary">{level}</span>
+                    <span className={styles.distanceArrow} aria-hidden="true">→</span>
+                  </div>
+                  <h3><strong>{distance}</strong>{title}</h3>
+                  <p>{description}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section className={styles.organizerSection}>

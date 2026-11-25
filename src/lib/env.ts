@@ -21,7 +21,13 @@ export function getSupabaseServiceKey() {
 }
 
 export function getAppUrl() {
-  return required("NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL).replace(/\/$/, "");
+  const configuredUrl = required("NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL).trim();
+  const url = new URL(configuredUrl.includes("://") ? configuredUrl : `https://${configuredUrl}`);
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error("NEXT_PUBLIC_APP_URL must use HTTP or HTTPS");
+  }
+
+  return url.origin;
 }
 
 export function getSafe2PayConfig() {

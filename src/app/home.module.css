@@ -160,3 +160,97 @@
 .screen :global(.hero-actions .button:focus-visible) {
   outline-color: var(--on-brand);
 }
+
+.distanceSection {
+  padding-block: clamp(44px, 6vw, 76px);
+  border-block: 1px solid var(--line);
+  background: var(--brand-green-soft);
+}
+
+.distanceGrid {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.distanceCard {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.distanceCard:hover,
+.distanceCard:focus-visible {
+  border-color: var(--brand-green-bright);
+  box-shadow: var(--shadow-raised);
+}
+
+.distanceCard:hover {
+  transform: translateY(-3px);
+}
+
+.distanceCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.distanceArrow {
+  color: var(--brand-green);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.distanceCard h3 {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  color: var(--brand-green-dark);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.distanceCard strong {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.055em;
+}
+
+.distanceCard p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (min-width: 640px) {
+  .distanceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .distanceGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .distanceCard {
+    transition: none;
+  }
+
+  .distanceCard:hover {
+    transform: none;
+  }
+}

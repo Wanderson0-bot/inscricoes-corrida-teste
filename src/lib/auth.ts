@@ -1,20 +1,13 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isMissingSupabaseSession } from "@/lib/supabase/session";
 
-export async function requireOrganizer(writeCookies = false) {
+export async function getAuthenticatedProfile(writeCookies = false) {
   const supabase = await createSupabaseServerClient(writeCookies);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-  if (
-    userError &&
-    userError.code !== "session_not_found" &&
-    userError.code !== "refresh_token_not_found" &&
-    userError.name !== "AuthSessionMissingError"
-  ) {
-    throw new Error("Não foi possível verificar a sessão.");
+  if (userError && !isMissingSupabaseSession(userError)) {
+    throw new Error("Não foi possível verificar a sessão.", { cause: userError });
   }
   if (!user) {
     redirect("/entrar");
@@ -24,49 +17,38 @@ export async function requireOrganizer(writeCookies = false) {
     .from("user_profiles")
     .select("organization_id, role")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (profileError && profileError.code !== "PGRST116") {
-    throw new Error("Não foi possível verificar as permissões do organizador.");
+  if (profileError) {
+    throw new Error("Não foi possível verificar as permissões da conta.", { cause: profileError });
   }
-  if (!profile || profile.role !== "organizer" || !profile.organization_id) {
-    await supabase.auth.signOut();
+
+  return { supabase, user, profile };
+}
+
+export async function requireOrganizer() {
+  const { supabase, user, profile } = await getAuthenticatedProfile();
+
+  if (!profile) {
+    redirect("/cadastro-organizador/concluir");
+  }
+  if (profile.role === "platform_admin") {
+    redirect("/admin/financeiro");
+  }
+  if (profile.role !== "organizer" || !profile.organization_id) {
     redirect("/entrar?erro=acesso");
   }
 
   return { supabase, user, profile };
 }
 
-export async function requirePlatformAdmin(writeCookies = false) {
-  const supabase = await createSupabaseServerClient(writeCookies);
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+export async function requirePlatformAdmin() {
+  const { supabase, user, profile } = await getAuthenticatedProfile();
 
-  if (
-    userError &&
-    userError.code !== "session_not_found" &&
-    userError.code !== "refresh_token_not_found" &&
-    userError.name !== "AuthSessionMissingError"
-  ) {
-    throw new Error("Não foi possível verificar a sessão.");
+  if (!profile) {
+    redirect("/cadastro-organizador/concluir");
   }
-  if (!user) {
-    redirect("/entrar");
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("user_profiles")
-    .select("organization_id, role")
-    .eq("user_id", user.id)
-    .single();
-
-  if (profileError && profileError.code !== "PGRST116") {
-    throw new Error("Não foi possível verificar as permissões administrativas.");
-  }
-  if (!profile || profile.role !== "platform_admin" || profile.organization_id) {
-    await supabase.auth.signOut();
+  if (profile.role !== "platform_admin" || profile.organization_id) {
     redirect("/entrar?erro=acesso");
   }
 

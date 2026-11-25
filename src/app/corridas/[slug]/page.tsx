@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { connection } from "next/server";
 import { RegistrationForm } from "@/app/registration-form";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import styles from "../../race-detail.module.css";
 
 export const instant = false;
@@ -14,7 +14,7 @@ function isMissingRegulationColumn(error: { code?: string; message?: string } | 
 export default async function RacePage({ params }: PageProps<"/corridas/[slug]">) {
   await connection();
   const { slug } = await params;
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   let { data: race, error } = await supabase
     .from("races")
     .select("id, name, description, regulation, location, starts_at, registration_opens_at, registration_closes_at")

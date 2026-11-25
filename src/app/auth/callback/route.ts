@@ -14,33 +14,36 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient(true);
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const flowId = request.nextUrl.searchParams.get("sb_flow_id");
+  const { data: { user, session }, error } = await supabase.auth.exchangeCodeForSession(
+    code,
+    flowId ? { flowId } : undefined,
+  );
 
-  if (error) {
+  if (error || !session || !user) {
     return NextResponse.redirect(new URL(failurePath, request.url));
   }
 
   if (isOrganizerSignup) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    const organizationName = user?.user_metadata?.organization_name;
+    const organizationName = user.user_metadata?.organization_name;
 
     if (
-      userError ||
-      !user ||
       user.user_metadata?.organizer_signup !== true ||
       typeof organizationName !== "string" ||
       organizationName.trim().length < 2 ||
       organizationName.trim().length > 120
     ) {
-      return NextResponse.redirect(new URL(failurePath, request.url));
+      return NextResponse.redirect(new URL("/cadastro-organizador/concluir", request.url));
     }
 
     try {
       await provisionOrganizer(user.id, organizationName.trim());
     } catch {
-      return NextResponse.redirect(new URL("/cadastro-organizador?erro=provisionamento", request.url));
+      return NextResponse.redirect(new URL("/cadastro-organizador/concluir?erro=provisionamento", request.url));
     }
   }
 
-  return NextResponse.redirect(new URL("/painel", request.url));
+  return NextResponse.redirect(new URL("/painel", request.url), {
+    headers: { "Cache-Control": "private, no-store" },
+  });
 }

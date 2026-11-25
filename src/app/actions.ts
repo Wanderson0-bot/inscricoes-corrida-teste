@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireOrganizer } from "@/lib/auth";
+import { getAuthenticatedProfile, requireOrganizer } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAppUrl, getPrivacyPolicyVersion } from "@/lib/env";
 import { provisionOrganizer } from "@/lib/organizer-registration";
@@ -153,17 +153,17 @@ export async function registerOrganizer(formData: FormData) {
         privacy_consent_at: new Date().toISOString(),
         privacy_policy_version: getPrivacyPolicyVersion(),
       },
-      emailRedirectTo: `${getAppUrl()}/auth/callback?flow=organizer`,
+      emailRedirectTo: new URL("/auth/callback?flow=organizer", getAppUrl()).toString(),
     },
   });
 
   if (error || !data.user) redirect("/cadastro-organizador?erro=cadastro");
 
-  if (data.session) {
+  if (data.session && data.user.email_confirmed_at) {
     try {
       await provisionOrganizer(data.user.id, parsed.data.organizationName);
     } catch {
-      redirect("/cadastro-organizador?erro=provisionamento");
+      redirect("/cadastro-organizador/concluir?erro=provisionamento");
     }
 
     revalidatePath("/", "layout");
@@ -173,9 +173,42 @@ export async function registerOrganizer(formData: FormData) {
   redirect("/cadastro-organizador?cadastro=confirmar");
 }
 
+export async function completeOrganizerRegistration(formData: FormData) {
+  const { supabase, user, profile } = await getAuthenticatedProfile(true);
+  if (profile) {
+    redirect(profile.role === "platform_admin" ? "/admin/financeiro" : "/painel");
+  }
+  if (!user.email_confirmed_at) {
+    redirect("/cadastro-organizador/concluir");
+  }
+
+  const organizationName = z.string().trim().min(2).max(120)
+    .safeParse(formString(formData, "organizationName"));
+  if (!organizationName.success || formString(formData, "privacyConsent") !== "on") {
+    redirect("/cadastro-organizador/concluir?erro=validacao");
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      privacy_consent_at: new Date().toISOString(),
+      privacy_policy_version: getPrivacyPolicyVersion(),
+    },
+  });
+  if (error) redirect("/cadastro-organizador/concluir?erro=provisionamento");
+
+  try {
+    await provisionOrganizer(user.id, organizationName.data);
+  } catch {
+    redirect("/cadastro-organizador/concluir?erro=provisionamento");
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/painel");
+}
+
 export async function signOut() {
-  const { supabase } = await requireOrganizer(true);
-  const { error } = await supabase.auth.signOut();
+  const supabase = await createSupabaseServerClient(true);
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) throw new Error("Não foi possível encerrar a sessão.");
   redirect("/entrar");
 }
